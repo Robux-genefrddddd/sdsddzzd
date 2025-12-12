@@ -190,7 +190,7 @@ export function AdminKeyManagement({
         {canCreateKeys(userRole) && (
           <button
             onClick={() => setShowGenerateForm(!showGenerateForm)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
             style={{
               backgroundColor: colors.accent,
               color: "#FFFFFF",
