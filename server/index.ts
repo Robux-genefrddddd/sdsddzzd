@@ -78,13 +78,16 @@ export function createServer() {
   // Input validation middleware (apply globally)
   app.use(validateInput);
 
+  // Apply rate limiting to all API routes
+  app.use("/api", apiLimiter);
+
   // Example API routes
   app.get("/api/ping", (_req, res) => {
     const ping = process.env.PING_MESSAGE ?? "ping";
     res.json({ message: ping });
   });
 
-  app.get("/api/demo", apiLimiter, handleDemo);
+  app.get("/api/demo", handleDemo);
 
   // Note: In development, Vite's dev server handles static files and SPA routing.
   // In production, node-build.ts handles static files and SPA fallback.
