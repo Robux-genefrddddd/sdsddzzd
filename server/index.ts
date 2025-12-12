@@ -81,9 +81,16 @@ export function createServer() {
 
   app.get("/api/demo", apiLimiter, handleDemo);
 
-  // Handle 404s
-  app.use((_req, res) => {
-    res.status(404).json({ error: "Not found" });
+  // Serve static files and SPA fallback
+  app.use(express.static("dist/spa"));
+
+  // SPA fallback - serve index.html for all non-API routes
+  app.get("*", (req, res) => {
+    // Don't serve HTML for API requests
+    if (req.path.startsWith("/api/")) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.sendFile("dist/spa/index.html", { root: "." });
   });
 
   return app;
