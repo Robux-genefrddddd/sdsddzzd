@@ -240,7 +240,10 @@ export function DashboardSidebar({
             </div>
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: colors.textSecondary }}>
-                {getStorageLimitDisplay()} {userPlan.storageLimit === Infinity ? "" : "limit"}
+                {(() => {
+                  const limit = getStorageLimitDisplay();
+                  return `${limit.text}${limit.showLimit ? " limit" : ""}`;
+                })()}
               </p>
               <p
                 className="text-xs font-medium px-2 py-0.5 rounded"
