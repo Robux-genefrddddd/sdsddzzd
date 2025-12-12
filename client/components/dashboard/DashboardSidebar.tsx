@@ -149,11 +149,19 @@ export function DashboardSidebar({
       >
         {/* User Card */}
         <div className="flex items-start gap-3">
-          <img
-            src="https://cdn.builder.io/api/v1/image/assets%2F91e2732f1c03487e879c66ee97e72712%2Fee08390eccc04e8dbea3ce5415d97e92?format=webp&width=800"
-            alt="User Avatar"
-            className="w-10 h-10 rounded-full flex-shrink-0"
-          />
+          <div
+            className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center"
+            style={{
+              backgroundColor: colors.primary,
+              opacity: 0.8,
+            }}
+          >
+            <img
+              src="https://www.iconpacks.net/icons/2/free-user-icon-3296-thumb.png"
+              alt="User Avatar"
+              className="w-6 h-6 object-contain"
+            />
+          </div>
           <div className="flex-1 min-w-0">
             <p
               className="text-xs font-semibold truncate"
