@@ -169,23 +169,6 @@ export function AdminKeyManagement({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const getTypeIcon = (type: string) => {
-    if (type === "lifetime") return <Crown className="w-4 h-4" />;
-    if (type === "yearly") return <Zap className="w-4 h-4" />;
-    return <Lock className="w-4 h-4" />;
-  };
-
-  const getTypeColor = (type: string) => {
-    if (type === "lifetime") return "#A855F7";
-    if (type === "yearly") return "#F59E0B";
-    return colors.primary;
-  };
-
-  const getTypeBgColor = (type: string) => {
-    if (type === "lifetime") return "rgba(168, 85, 247, 0.15)";
-    if (type === "yearly") return "rgba(245, 158, 11, 0.15)";
-    return "rgba(59, 130, 246, 0.15)";
-  };
 
   return (
     <div className="space-y-6">
