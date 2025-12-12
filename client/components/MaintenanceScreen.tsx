@@ -62,8 +62,8 @@ export function MaintenanceScreen() {
 
   const colors = getThemeColors("dark");
 
-  // Show Warning Modal if mode is "warning"
-  if (maintenanceMode === "warning") {
+  // Show Warning Modal if mode is "warning" and not dismissed
+  if (maintenanceMode === "warning" && !dismissedModal) {
     return (
       <MaintenanceModal
         message={maintenanceMessage}

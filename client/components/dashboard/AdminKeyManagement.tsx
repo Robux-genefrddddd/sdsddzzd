@@ -1,14 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Plus,
-  Copy,
-  Trash2,
-  Check,
-  AlertTriangle,
-  Lock,
-  Crown,
-  Zap,
-} from "lucide-react";
+import { Plus, Copy, Trash2, Check } from "lucide-react";
 import { getThemeColors } from "@/lib/theme-colors";
 import {
   collection,
@@ -22,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserRole, canCreateKeys } from "@/lib/auth-utils";
+import { sanitizeFirestoreQuery, sanitizeInput } from "@/lib/input-validation";
 import { PremiumKeyData } from "@shared/api";
 
 interface PremiumKey extends PremiumKeyData {
@@ -97,6 +89,12 @@ export function AdminKeyManagement({
       return;
     }
 
+    // Validate form data
+    if (formData.maxEmojis < 1 || formData.maxEmojis > 1000000) {
+      alert("Max emojis must be between 1 and 1,000,000");
+      return;
+    }
+
     setGeneratingKey(true);
     try {
       const generateRandomSegment = () => {
@@ -120,16 +118,18 @@ export function AdminKeyManagement({
         expiresAt = expires.toISOString();
       }
 
-      await setDoc(doc(db, "premiumKeys", newKey), {
+      // Sanitize and validate data before writing to Firestore
+      const keyData: PremiumKeyData = {
         key: newKey,
         status: "unused",
         type: formData.type,
-        maxEmojis: formData.maxEmojis,
+        maxEmojis: Math.max(1, Math.min(formData.maxEmojis, 1000000)), // Clamp between 1 and 1M
         isActive: true,
-        used: false,
         createdAt: now.toISOString(),
-        createdBy: userId,
-      } as PremiumKeyData);
+        createdBy: sanitizeInput(userId),
+      };
+
+      await setDoc(doc(db, "premiumKeys", newKey), keyData);
 
       setShowGenerateForm(false);
       setFormData({ type: "monthly", maxEmojis: 1000 });
@@ -152,27 +152,12 @@ export function AdminKeyManagement({
   };
 
   const copyToClipboard = (key: string, id: string) => {
+    // Validate key format before copying
+    if (!key || key.length === 0) return;
+
     navigator.clipboard.writeText(key);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const getTypeIcon = (type: string) => {
-    if (type === "lifetime") return <Crown className="w-4 h-4" />;
-    if (type === "yearly") return <Zap className="w-4 h-4" />;
-    return <Lock className="w-4 h-4" />;
-  };
-
-  const getTypeColor = (type: string) => {
-    if (type === "lifetime") return "#A855F7";
-    if (type === "yearly") return "#F59E0B";
-    return colors.primary;
-  };
-
-  const getTypeBgColor = (type: string) => {
-    if (type === "lifetime") return "rgba(168, 85, 247, 0.15)";
-    if (type === "yearly") return "rgba(245, 158, 11, 0.15)";
-    return "rgba(59, 130, 246, 0.15)";
   };
 
   return (
@@ -181,7 +166,7 @@ export function AdminKeyManagement({
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h3 className="text-xl font-bold" style={{ color: colors.text }}>
-            🔐 Premium Keys
+            Premium Keys
           </h3>
           <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
             Manage license keys for premium access
@@ -190,7 +175,7 @@ export function AdminKeyManagement({
         {canCreateKeys(userRole) && (
           <button
             onClick={() => setShowGenerateForm(!showGenerateForm)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors"
             style={{
               backgroundColor: colors.accent,
               color: "#FFFFFF",
@@ -205,14 +190,14 @@ export function AdminKeyManagement({
       {/* Generate Key Form */}
       {showGenerateForm && canCreateKeys(userRole) && (
         <div
-          className="p-6 rounded-xl border space-y-4 animate-fadeIn"
+          className="p-6 rounded-lg border space-y-4"
           style={{
             backgroundColor: colors.card,
             borderColor: colors.border,
           }}
         >
           <h4 className="font-semibold text-lg" style={{ color: colors.text }}>
-            ✨ Generate New Premium Key
+            Generate New Premium Key
           </h4>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -238,9 +223,9 @@ export function AdminKeyManagement({
                   color: colors.text,
                 }}
               >
-                <option value="monthly">📅 Monthly</option>
-                <option value="yearly">📊 Yearly</option>
-                <option value="lifetime">👑 Lifetime</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+                <option value="lifetime">Lifetime</option>
               </select>
             </div>
 
@@ -254,13 +239,15 @@ export function AdminKeyManagement({
               <input
                 type="number"
                 value={formData.maxEmojis}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1000;
                   setFormData({
                     ...formData,
-                    maxEmojis: parseInt(e.target.value) || 0,
-                  })
-                }
+                    maxEmojis: Math.max(1, Math.min(value, 1000000)),
+                  });
+                }}
                 min="1"
+                max="1000000"
                 className="w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none transition-all"
                 style={{
                   backgroundColor: colors.sidebar,
@@ -274,13 +261,13 @@ export function AdminKeyManagement({
           <button
             onClick={generateKey}
             disabled={generatingKey}
-            className="w-full px-4 py-3 rounded-lg font-medium transition-all duration-300 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105"
+            className="w-full px-4 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               backgroundColor: colors.accent,
               color: "#FFFFFF",
             }}
           >
-            {generatingKey ? "⏳ Generating..." : "🚀 Create Key"}
+            {generatingKey ? "Generating..." : "Create Key"}
           </button>
         </div>
       )}
@@ -295,7 +282,7 @@ export function AdminKeyManagement({
         </div>
       ) : keys.length === 0 ? (
         <div
-          className="p-12 rounded-xl border text-center"
+          className="p-12 rounded-lg border text-center"
           style={{
             backgroundColor: colors.card,
             borderColor: colors.border,
@@ -315,7 +302,7 @@ export function AdminKeyManagement({
             return (
               <div
                 key={key.id}
-                className="p-5 rounded-xl border transition-all duration-300 hover:shadow-lg transform hover:scale-105 group"
+                className="p-5 rounded-lg border transition-colors group"
                 style={{
                   backgroundColor: colors.card,
                   borderColor: colors.border,
@@ -323,37 +310,29 @@ export function AdminKeyManagement({
                 }}
               >
                 {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
                     <div
-                      className="p-2 rounded-lg"
-                      style={{ backgroundColor: getTypeBgColor(key.type) }}
+                      className="text-xs uppercase tracking-wide font-medium"
+                      style={{ color: colors.textSecondary }}
                     >
-                      {getTypeIcon(key.type)}
+                      {key.type === "lifetime"
+                        ? "Lifetime"
+                        : key.type === "yearly"
+                          ? "Yearly"
+                          : "Monthly"}
                     </div>
-                    <div>
-                      <div
-                        className="text-xs uppercase tracking-wide"
-                        style={{ color: colors.textSecondary }}
-                      >
-                        {key.type === "lifetime"
-                          ? "👑 Lifetime"
-                          : key.type === "yearly"
-                            ? "📊 Yearly"
-                            : "📅 Monthly"}
-                      </div>
-                      <div
-                        className="text-sm font-semibold mt-1"
-                        style={{ color: colors.text }}
-                      >
-                        {key.maxEmojis.toLocaleString()} Emojis
-                      </div>
+                    <div
+                      className="text-lg font-semibold mt-1"
+                      style={{ color: colors.text }}
+                    >
+                      {key.maxEmojis.toLocaleString()}
                     </div>
                   </div>
 
                   {/* Status Badge */}
                   <div
-                    className="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1"
+                    className="px-2 py-1 rounded text-xs font-medium"
                     style={{
                       backgroundColor: isUsed
                         ? "rgba(34, 197, 94, 0.15)"
@@ -361,7 +340,7 @@ export function AdminKeyManagement({
                       color: isUsed ? "#22C55E" : colors.primary,
                     }}
                   >
-                    {isUsed ? "✓ Used" : "○ Unused"}
+                    {isUsed ? "Used" : "Unused"}
                   </div>
                 </div>
 
@@ -438,17 +417,17 @@ export function AdminKeyManagement({
                       <div className="flex gap-2">
                         <button
                           onClick={() => deleteKey(key.id, key)}
-                          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all transform hover:scale-105"
+                          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                           style={{
                             backgroundColor: "rgba(239, 68, 68, 0.2)",
                             color: "#EF4444",
                           }}
                         >
-                          ⚠️ Confirm Delete
+                          Confirm Delete
                         </button>
                         <button
                           onClick={() => setDeleteConfirm(null)}
-                          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                          className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                           style={{
                             backgroundColor: colors.sidebar,
                             color: colors.textSecondary,
@@ -460,7 +439,7 @@ export function AdminKeyManagement({
                     ) : (
                       <button
                         onClick={() => setDeleteConfirm(key.id)}
-                        className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 opacity-70 hover:opacity-100"
+                        className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 opacity-70 hover:opacity-100"
                         style={{
                           backgroundColor: "rgba(239, 68, 68, 0.1)",
                           color: "#EF4444",
@@ -482,7 +461,7 @@ export function AdminKeyManagement({
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div
-          className="p-5 rounded-xl border transition-all hover:shadow-lg"
+          className="p-5 rounded-lg border transition-colors"
           style={{
             backgroundColor: colors.card,
             borderColor: colors.border,
@@ -502,7 +481,7 @@ export function AdminKeyManagement({
           </p>
         </div>
         <div
-          className="p-5 rounded-xl border transition-all hover:shadow-lg"
+          className="p-5 rounded-lg border transition-colors"
           style={{
             backgroundColor: colors.card,
             borderColor: colors.border,
@@ -519,7 +498,7 @@ export function AdminKeyManagement({
           </p>
         </div>
         <div
-          className="p-5 rounded-xl border transition-all hover:shadow-lg"
+          className="p-5 rounded-lg border transition-colors"
           style={{
             backgroundColor: colors.card,
             borderColor: colors.border,
@@ -539,7 +518,7 @@ export function AdminKeyManagement({
           </p>
         </div>
         <div
-          className="p-5 rounded-xl border transition-all hover:shadow-lg"
+          className="p-5 rounded-lg border transition-colors"
           style={{
             backgroundColor: colors.card,
             borderColor: colors.border,
