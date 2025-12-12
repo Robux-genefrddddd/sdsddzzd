@@ -169,10 +169,15 @@ export function AdminGlobalStats({ theme, userRole }: AdminGlobalStatsProps) {
   };
 
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-bold" style={{ color: colors.text }}>
-        Global Statistics
-      </h3>
+    <div className="space-y-8">
+      <div>
+        <h3 className="text-2xl font-bold" style={{ color: colors.text }}>
+          📊 Global Statistics
+        </h3>
+        <p className="text-sm mt-1" style={{ color: colors.textSecondary }}>
+          System-wide metrics and analytics dashboard
+        </p>
+      </div>
 
       {loading ? (
         <div className="p-8 text-center">
