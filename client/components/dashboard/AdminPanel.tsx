@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Key, Users, AlertCircle, BarChart3, Sparkles } from "lucide-react";
+import { Key, Users, AlertCircle, BarChart3 } from "lucide-react";
 import { getThemeColors } from "@/lib/theme-colors";
 import { AdminKeyManagement } from "./AdminKeyManagement";
 import { AdminUserManagement } from "./AdminUserManagement";
