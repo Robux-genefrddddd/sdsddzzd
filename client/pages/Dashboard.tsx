@@ -190,6 +190,10 @@ export default function Dashboard() {
   const handleFileUpload = async (file: File) => {
     if (!file || !auth.currentUser) return;
 
+    // Determine max file size based on plan
+    const maxFileSize = userPlan.type === "premium" ? 800 : 300;
+    const maxFileSizeBytes = maxFileSize * 1024 * 1024;
+
     // Reset upload state
     setUploadFileName(file.name);
     setUploadProgress(0);
@@ -202,10 +206,10 @@ export default function Dashboard() {
       // Stage 1: Validate file
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Check file size (100MB limit)
-      if (file.size > MAX_FILE_SIZE) {
+      // Check file size based on plan
+      if (file.size > maxFileSizeBytes) {
         setUploadError(
-          `File size exceeds 100MB limit. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
+          `File size exceeds ${maxFileSize}MB limit. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB`,
         );
         setUploadStage("error");
         setUploading(false);
